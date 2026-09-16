@@ -37,6 +37,7 @@ import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 
 const OFFSCREEN_CANVAS_POSITION: Point2 = [-1e5, -1e5];
 const MAXIMUM_SLAB_SAMPLES = 101;
+const SCALAR_REFRESH_INTERVAL = 2000;
 
 const projectionModes = new Map<BlendModes, ProjectionMode>([
   [BlendModes.MAXIMUM_INTENSITY_BLEND, ProjectionMode.MAX],
@@ -52,11 +53,17 @@ const scalarImageDataCache = new WeakMap<vtkImageData, vtkImageData>();
 function updateScalars(volume: IImageVolume, imageData: vtkImageData): void {
   const values = volume.voxelManager.getCompleteScalarDataArray();
   const [x, y, z] = imageData.getDimensions();
+  const numberOfComponents = values.length / (x * y * z);
+
+  // A streaming volume has no scalars until its first image has loaded
+  if (!Number.isInteger(numberOfComponents) || numberOfComponents < 1) {
+    return;
+  }
 
   imageData.getPointData().setScalars(
     vtkDataArray.newInstance({
       name: 'Pixels',
-      numberOfComponents: values.length / (x * y * z),
+      numberOfComponents,
       values,
     })
   );
@@ -206,23 +213,56 @@ class CPRViewport extends BaseVolumeViewport {
     }
 
     if (imageData !== volume.imageData) {
-      // Streaming volumes fill their voxel manager after this point, so the
-      // scalars are copied again once the volume has loaded
-      const onLoaded = (evt: EventTypes.ImageVolumeLoadingCompletedEvent) => {
-        if (evt.detail.volumeId === volumeId) {
-          updateScalars(volume, imageData);
-          this.render();
+      // A streaming volume fills its voxel manager after this point, so the
+      // scalars are copied again while it loads (throttled, each copy is the
+      // whole volume) and once more when it has finished
+      let lastCopy = 0;
+      const refresh = (evt: EventTypes.ImageVolumeModifiedEvent) => {
+        const finished = evt.type === Events.IMAGE_VOLUME_LOADING_COMPLETED;
+
+        if (
+          evt.detail.volumeId !== volumeId ||
+          (!finished && performance.now() - lastCopy < SCALAR_REFRESH_INTERVAL)
+        ) {
+          return;
+        }
+
+        lastCopy = performance.now();
+        updateScalars(volume, imageData);
+        this.updateActorVisibility();
+        this.applyDefaultVOI(volume).then(() => this.render());
+
+        // The last image can reach the cache after the completion event
+        if (finished && !imageData.getPointData().getScalars()) {
+          setTimeout(() => {
+            this.updateActorVisibility();
+            this.render();
+          }, SCALAR_REFRESH_INTERVAL);
         }
       };
+      eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, refresh);
       eventTarget.addEventListener(
         Events.IMAGE_VOLUME_LOADING_COMPLETED,
-        onLoaded
+        refresh
       );
-      this.removeVolumeListener = () =>
+      this.removeVolumeListener = () => {
+        eventTarget.removeEventListener(Events.IMAGE_VOLUME_MODIFIED, refresh);
         eventTarget.removeEventListener(
           Events.IMAGE_VOLUME_LOADING_COMPLETED,
-          onLoaded
+          refresh
         );
+      };
+    }
+
+    // The transfer function has to exist before the actor is added, as
+    // camera events read the viewport properties
+    const property = this.actor.getProperty();
+    if (!property.getRGBTransferFunction(0)) {
+      property.setRGBTransferFunction(
+        0,
+        createLinearRGBTransferFunction({ lower: 0, upper: 1 })
+      );
+      property.setUseLookupTableScalarRange(true);
     }
 
     const actorEntry: ActorEntry = {
@@ -232,17 +272,7 @@ class CPRViewport extends BaseVolumeViewport {
     };
     this.setActors([actorEntry]);
     this.updateActorVisibility();
-
-    await setDefaultVolumeVOI(this.actor, volume);
-    const property = this.actor.getProperty();
-    if (!property.getRGBTransferFunction(0)) {
-      const [lower, upper] = volume.voxelManager.getRange();
-      property.setRGBTransferFunction(
-        0,
-        createLinearRGBTransferFunction({ lower, upper })
-      );
-      property.setUseLookupTableScalarRange(true);
-    }
+    await this.applyDefaultVOI(volume);
 
     callback?.({ volumeActor: this.actor as unknown as VolumeActor, volumeId });
 
@@ -440,7 +470,8 @@ class CPRViewport extends BaseVolumeViewport {
     }
 
     if (volume) {
-      setDefaultVolumeVOI(this.actor, volume).then(() => this.render());
+      this.actor.getProperty().getRGBTransferFunction(0)?.setMappingRange(0, 1);
+      this.applyDefaultVOI(volume).then(() => this.render());
     }
 
     this.updateReformation();
@@ -624,9 +655,46 @@ class CPRViewport extends BaseVolumeViewport {
     return Math.min(...spacing) + halfSlab;
   }
 
+  /**
+   * Windows the reformation to the default VOI of the volume, falling back to
+   * the scalar range of its loaded data, unless a VOI has been set already.
+   */
+  private async applyDefaultVOI(volume: IImageVolume): Promise<void> {
+    const cfun = this.actor.getProperty().getRGBTransferFunction(0);
+    const isUnset = () => {
+      const [lower, upper] = cfun.getRange();
+      return lower === 0 && upper === 1;
+    };
+
+    if (!isUnset()) {
+      return;
+    }
+
+    await setDefaultVolumeVOI(this.actor, volume);
+
+    if (isUnset()) {
+      const [lower, upper] = volume.voxelManager.getRange();
+
+      if (lower < upper) {
+        cfun.setMappingRange(lower, upper);
+      }
+    }
+  }
+
   private updateActorVisibility(): void {
+    const imageData: vtkImageData | undefined = this.mapper.getInputData(0);
+
+    if (imageData && !imageData.getPointData().getScalars()) {
+      // The scalars may have become available since the last copy
+      const volume = cache.getVolume(this.getVolumeId());
+
+      if (volume) {
+        updateScalars(volume, imageData);
+      }
+    }
+
     this.actor.setVisibility(
-      !!this.centerline && !!this.mapper.getInputData(0)
+      !!this.centerline && !!imageData?.getPointData().getScalars()
     );
   }
 
