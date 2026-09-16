@@ -539,6 +539,13 @@ class CPRViewport extends BaseVolumeViewport {
 
   public getNumberOfSlices = (): number => 1;
 
+  /**
+   * A reformation is a single image, so there is nothing to scroll through.
+   */
+  public scroll(): void {
+    // nothing to scroll
+  }
+
   public getRotation = (): number => 0;
 
   public isInAcquisitionPlane(): boolean {
