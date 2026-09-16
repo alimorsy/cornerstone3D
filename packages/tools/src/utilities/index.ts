@@ -39,6 +39,7 @@ import * as viewportFilters from './viewportFilters';
 import * as orientation from './orientation';
 import * as cine from './cine';
 import * as boundingBox from './boundingBox';
+import * as centerline from './centerline';
 import * as draw3D from './draw3D';
 import * as planarFreehandROITool from './planarFreehandROITool';
 import * as rectangleROITool from './rectangleROITool';
@@ -102,6 +103,7 @@ export {
   viewport,
   cine,
   boundingBox,
+  centerline,
   draw3D,
   rectangleROITool,
   planarFreehandROITool,
