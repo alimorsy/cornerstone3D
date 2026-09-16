@@ -6,6 +6,7 @@ import getRenderingEngine from './getRenderingEngine';
 import VolumeViewport from './VolumeViewport';
 import StackViewport from './StackViewport';
 import VolumeViewport3D from './VolumeViewport3D';
+import CPRViewport from './CPRViewport';
 import {
   defaultRenderPathResolver,
   DefaultRenderPathResolver,
@@ -146,6 +147,7 @@ export {
   VolumeViewport,
   LegacyVolumeViewport3D,
   StackViewport,
+  CPRViewport,
   GenericVolumeViewport3D,
   GenericViewport,
   DefaultRenderPathResolver,

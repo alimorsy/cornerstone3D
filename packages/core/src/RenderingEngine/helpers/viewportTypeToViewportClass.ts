@@ -19,6 +19,7 @@ import VolumeViewport3DLegacyAdapter from '../GenericViewport/Volume3D/VolumeVie
 import NextWSIViewport from '../GenericViewport/WSI/WSIViewport';
 import WSIViewportLegacyAdapter from '../GenericViewport/WSI/WSIViewportLegacyAdapter';
 import ECGViewportLegacyAdapter from '../GenericViewport/ECG/ECGViewportLegacyAdapter';
+import CPRViewport from '../CPRViewport';
 import type { ViewportTypeConstants } from '../../types/ViewportTypeRegistry';
 import type {
   ViewportInput,
@@ -108,6 +109,10 @@ function registerCoreViewportTypes() {
   registerViewportType({
     type: ViewportType.VIDEO,
     ViewportClass: VideoViewport,
+  });
+  registerViewportType({
+    type: ViewportType.CPR,
+    ViewportClass: CPRViewport,
   });
 
   // next viewports below

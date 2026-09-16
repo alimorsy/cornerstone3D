@@ -37,6 +37,10 @@ enum ViewportType {
    */
   ECG = 'ecg',
   ECG_NEXT = 'ecgNext',
+  /**
+   * Curved planar reformation of a volume along a centerline
+   */
+  CPR = 'cpr',
 }
 
 export default ViewportType;

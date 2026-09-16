@@ -15,6 +15,7 @@ import VolumeViewport from './RenderingEngine/VolumeViewport';
 import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
 import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
+import CPRViewport from './RenderingEngine/CPRViewport';
 import VideoViewport from './RenderingEngine/VideoViewport';
 import WSIViewport from './RenderingEngine/WSIViewport';
 import ECGViewport from './RenderingEngine/ECGViewport';
@@ -303,6 +304,7 @@ export {
   GenericVolumeViewport3D,
   Viewport,
   StackViewport,
+  CPRViewport,
   VideoViewport,
   WSIViewport,
   ECGViewport,

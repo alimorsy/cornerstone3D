@@ -104,7 +104,7 @@ const log = coreLog.getLogger('RenderingEngine', 'BaseVolumeViewport');
 
 abstract class BaseVolumeViewport extends Viewport {
   useCPURendering = false;
-  private _FrameOfReferenceUID: string;
+  protected _FrameOfReferenceUID: string;
   private sharpening: number = 0;
   private smoothing: number = 0;
 
@@ -140,6 +140,7 @@ abstract class BaseVolumeViewport extends Viewport {
 
     switch (this.type) {
       case ViewportType.ORTHOGRAPHIC:
+      case ViewportType.CPR:
         camera.setParallelProjection(true);
         break;
       case ViewportType.VOLUME_3D:
@@ -157,6 +158,15 @@ abstract class BaseVolumeViewport extends Viewport {
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
+  }
+
+  /**
+   * Whether the actor entry renders a volume in this viewport. Subclasses that
+   * render volumes through other actor types (CPRViewport uses a vtkImageSlice)
+   * override this so volume lookups find their actor.
+   */
+  protected isVolumeActorEntry(actorEntry: ActorEntry): boolean {
+    return actorIsA(actorEntry, 'vtkVolume');
   }
 
   override isOrientationChangeable(): boolean {
@@ -1855,7 +1865,7 @@ abstract class BaseVolumeViewport extends Viewport {
       (actor) => actor.referencedId === volumeId
     );
 
-    if (!actorEntry || !actorIsA(actorEntry, 'vtkVolume')) {
+    if (!actorEntry || !this.isVolumeActorEntry(actorEntry)) {
       return;
     }
 
@@ -2275,7 +2285,7 @@ abstract class BaseVolumeViewport extends Viewport {
    */
   public hasImageURI = (imageURI: string): boolean => {
     const volumeActors = this.getActors().filter((actorEntry) =>
-      actorIsA(actorEntry, 'vtkVolume')
+      this.isVolumeActorEntry(actorEntry)
     );
 
     return volumeActors.some(({ uid, referencedId }) => {
@@ -2446,7 +2456,7 @@ abstract class BaseVolumeViewport extends Viewport {
    */
   public getIntensityFromWorld(point: Point3): number {
     const actorEntry = this.getDefaultActor();
-    if (!actorIsA(actorEntry, 'vtkVolume')) {
+    if (!this.isVolumeActorEntry(actorEntry)) {
       return;
     }
 
@@ -2497,8 +2507,8 @@ abstract class BaseVolumeViewport extends Viewport {
     }
     if (!specifier?.volumeId) {
       // find the first image actor of instance type vtkVolume
-      const found = actorEntries.find(
-        (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
+      const found = actorEntries.find((actorEntry) =>
+        this.isVolumeActorEntry(actorEntry)
       );
 
       return found?.referencedId || found?.uid;
@@ -2509,7 +2519,7 @@ abstract class BaseVolumeViewport extends Viewport {
     // volumeId isn't currently shown in this viewport.
     const found = actorEntries.find(
       (actorEntry) =>
-        actorEntry.actor.getClassName() === 'vtkVolume' &&
+        this.isVolumeActorEntry(actorEntry) &&
         actorEntry.referencedId === specifier?.volumeId
     );
 
@@ -2532,8 +2542,8 @@ abstract class BaseVolumeViewport extends Viewport {
         return;
       }
       // find the first image actor of instance type vtkVolume
-      volumeId = actorEntries.find(
-        (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
+      volumeId = actorEntries.find((actorEntry) =>
+        this.isVolumeActorEntry(actorEntry)
       )?.referencedId;
       if (!volumeId) {
         return;
@@ -2551,7 +2561,7 @@ abstract class BaseVolumeViewport extends Viewport {
     });
   }
 
-  private _addVolumeId(volumeId: string): void {
+  protected _addVolumeId(volumeId: string): void {
     this.volumeIds.add(volumeId);
   }
 

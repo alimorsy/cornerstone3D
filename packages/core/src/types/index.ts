@@ -74,6 +74,8 @@ import type ICachedVolume from './ICachedVolume';
 import type IStackViewport from './IStackViewport';
 import type IWSIViewport from './IWSIViewport';
 import type IVolumeViewport from './IVolumeViewport';
+import type ICPRViewport from './ICPRViewport';
+import type { CPRCenterline, CPRMode } from './CPRCenterline';
 import type ViewportPreset from './ViewportPreset';
 
 // CPU types
@@ -188,6 +190,9 @@ export type {
   IECGViewport,
   IWSIViewport,
   IVolumeViewport,
+  ICPRViewport,
+  CPRCenterline,
+  CPRMode,
   IEnabledElement,
   ICache,
   IVolume,

@@ -120,6 +120,14 @@ enum Events {
   VOLUME_VIEWPORT_NEW_VOLUME = 'CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME',
 
   /**
+   * Triggers on element when the centerline of a CPR viewport is set or cleared
+   *
+   * Make use of {@link EventTypes.CPRCenterlineModifiedEvent | CPRCenterlineModified Event Type } for typing your event listeners for CPR_CENTERLINE_MODIFIED event,
+   * and see what event detail is included in {@link EventTypes.CPRCenterlineModifiedEventDetail | CPRCenterlineModified Event Detail }
+   */
+  CPR_CENTERLINE_MODIFIED = 'CORNERSTONE_CPR_CENTERLINE_MODIFIED',
+
+  /**
    * Triggers on the eventTarget when the volume has successfully loaded by volumeLoaders
    *
    * Make use of {@link EventTypes.VolumeLoadedEvent | VolumeLoaded Event Type } for typing your event listeners for VOLUME_LOADED event,

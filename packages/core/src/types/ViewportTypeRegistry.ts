@@ -11,6 +11,7 @@ export interface CoreViewportTypeRegistry {
   wholeSlideNext: 'wholeSlideNext';
   ecg: 'ecg';
   ecgNext: 'ecgNext';
+  cpr: 'cpr';
 }
 
 export interface CoreViewportTypeConstants {
@@ -26,6 +27,7 @@ export interface CoreViewportTypeConstants {
   readonly WHOLE_SLIDE_NEXT: 'wholeSlideNext';
   readonly ECG: 'ecg';
   readonly ECG_NEXT: 'ecgNext';
+  readonly CPR: 'cpr';
 }
 
 /**

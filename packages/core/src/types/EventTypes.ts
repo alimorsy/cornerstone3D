@@ -14,6 +14,7 @@ import type IImageCalibration from './IImageCalibration';
 import type { ColormapPublic } from './Colormap';
 import type IVolumeViewport from './IVolumeViewport';
 import type { ActorEntry } from './IActor';
+import type { CPRCenterline } from './CPRCenterline';
 
 /**
  * CAMERA_MODIFIED Event's data
@@ -474,11 +475,29 @@ interface ActorsChangedEventDetail {
  */
 type ActorsChangedEvent = CustomEventType<ActorsChangedEventDetail>;
 
+/**
+ * CPR_CENTERLINE_MODIFIED Event's data
+ */
+interface CPRCenterlineModifiedEventDetail {
+  /** Viewport Unique ID in the renderingEngine */
+  viewportId: string;
+  /** The centerline now shown by the viewport, undefined when it was cleared */
+  centerline?: CPRCenterline;
+}
+
+/**
+ * CPR_CENTERLINE_MODIFIED Event type
+ */
+type CPRCenterlineModifiedEvent =
+  CustomEventType<CPRCenterlineModifiedEventDetail>;
+
 export type {
   VolumeScrollOutOfBoundsEventDetail,
   VolumeScrollOutOfBoundsEvent,
   ActorsChangedEventDetail,
   ActorsChangedEvent,
+  CPRCenterlineModifiedEventDetail,
+  CPRCenterlineModifiedEvent,
   CameraModifiedEventDetail,
   CameraModifiedEvent,
   VoiModifiedEvent,

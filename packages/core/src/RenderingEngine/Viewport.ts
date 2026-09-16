@@ -1040,10 +1040,10 @@ class Viewport {
     const canvasWidth = this.sWidth / devicePixelRatio;
     const canvasHeight = this.sHeight / devicePixelRatio;
     const dimensions = imageData.getDimensions() as ReadonlyVec3;
-    const canvasZero = this.worldToCanvas(
+    const canvasZero = this.cameraWorldToCanvas(
       imageData.indexToWorld([0, 0, 0]) as Point3
     );
-    const canvasEdge = this.worldToCanvas(
+    const canvasEdge = this.cameraWorldToCanvas(
       imageData.indexToWorld([
         dimensions[0],
         dimensions[1],
@@ -1344,11 +1344,11 @@ class Viewport {
     const activeCamera = this.getVtkActiveCamera();
     const focalPoint = activeCamera.getFocalPoint() as Point3;
 
-    const zero3 = this.canvasToWorld([0, 0]);
-    const initialCanvasFocal = this.worldToCanvas(
+    const zero3 = this.cameraCanvasToWorld([0, 0]);
+    const initialCanvasFocal = this.cameraWorldToCanvas(
       vec3.subtract([0, 0, 0], initialCamera.focalPoint, zero3) as Point3
     );
-    const currentCanvasFocal = this.worldToCanvas(
+    const currentCanvasFocal = this.cameraWorldToCanvas(
       vec3.subtract([0, 0, 0], focalPoint, zero3) as Point3
     );
     const result = vec2.subtract(
@@ -1388,7 +1388,7 @@ class Viewport {
   public setPan(pan: Point2, storeAsInitialCamera = false): void {
     const previousCamera = this.getCamera();
     const { focalPoint, position } = previousCamera;
-    const zero3 = this.canvasToWorld([0, 0]);
+    const zero3 = this.cameraCanvasToWorld([0, 0]);
     const delta2 = vec2.subtract([0, 0], pan, this.getPan());
     if (
       Math.abs(delta2[0]) < 1 &&
@@ -1399,7 +1399,7 @@ class Viewport {
     }
     const delta = vec3.subtract(
       vec3.create(),
-      this.canvasToWorld(delta2 as Point2),
+      this.cameraCanvasToWorld(delta2 as Point2),
       zero3
     );
     const newFocal = vec3.subtract(vec3.create(), focalPoint, delta);
@@ -1412,6 +1412,23 @@ class Viewport {
       },
       storeAsInitialCamera
     );
+  }
+
+  /**
+   * Canvas to world through the camera projection alone. Pan and zoom are
+   * computed with this, so a viewport whose `canvasToWorld` follows a curved
+   * surface (CPRViewport) supplies its plain projection here.
+   */
+  protected cameraCanvasToWorld(canvasPos: Point2): Point3 {
+    return this.canvasToWorld(canvasPos);
+  }
+
+  /**
+   * World to canvas through the camera projection alone, see
+   * `cameraCanvasToWorld`.
+   */
+  protected cameraWorldToCanvas(worldPos: Point3): Point2 {
+    return this.worldToCanvas(worldPos);
   }
 
   /**
