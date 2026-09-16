@@ -73,6 +73,10 @@
         "name": "3D Volume Rendering",
         "description": "Demonstrates how to 3D render a volume and apply a preset"
       },
+      "cprViewport": {
+        "name": "CPR Viewport",
+        "description": "Demonstrates how to reformat a volume along a curved centerline with the CPR viewport: straightened and stretched modes, rotation, width and thick slab rendering"
+      },
       "volumeEvents": {
         "name": "Volume Viewport Events",
         "description": "Demonstrates the Events that are fired during interaction with a Volume Viewport"
@@ -194,6 +198,10 @@
       "imageCPRMapper": {
         "name": "Image CPR Mapper",
         "description": "Demonstrates how to take a SplineROI annotation line from a Sagittal viewport and project the volume data along that centerline into a Stack viewport."
+      },
+      "cprCenterline": {
+        "name": "CPR Centerline Tool",
+        "description": "Demonstrates how to draw a centerline through a volume with the Centerline tool and reformat it in a CPR viewport, with measurements on the reformation"
       },
       "cursor3D": {
         "name": "3D Volume Picking",
