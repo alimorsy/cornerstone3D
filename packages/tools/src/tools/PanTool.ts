@@ -1,5 +1,6 @@
 import { BaseTool } from './base';
 import {
+  Enums,
   getEnabledElement,
   utilities as csUtils,
   viewportHasPan,
@@ -135,7 +136,7 @@ class PanTool extends BaseTool {
     const viewport = enabledElement.viewport;
     const camera = getLegacyCamera(viewport);
 
-    if (!hasLegacyCameraPosition(camera)) {
+    if (!hasLegacyCameraPosition(camera) || isCPRViewport(viewport)) {
       if (!viewportHasPan(viewport)) {
         return;
       }
@@ -184,6 +185,12 @@ function getLegacyCamera(viewport: unknown): unknown {
   return typeof maybeViewport.getCamera === 'function'
     ? maybeViewport.getCamera()
     : undefined;
+}
+
+// A CPR viewport maps canvas points through its centerline, so it pans
+// through its own pan API rather than through world deltas
+function isCPRViewport(viewport: { type?: string }): boolean {
+  return viewport.type === Enums.ViewportType.CPR;
 }
 
 function hasLegacyCameraPosition(

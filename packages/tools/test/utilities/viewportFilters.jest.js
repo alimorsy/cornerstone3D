@@ -1,4 +1,5 @@
 jest.mock('@cornerstonejs/core', () => ({
+  Enums: { ViewportType: { CPR: 'cpr' } },
   getEnabledElement: jest.fn(),
   utilities: {
     isGenericViewport: jest.fn(() => false),
@@ -76,6 +77,16 @@ describe('filterViewportsWithFrameOfReferenceUID', () => {
 });
 
 describe('filterViewportsWithParallelNormals', () => {
+  it('keeps CPR viewports whatever their normal', () => {
+    const ref = createViewport({ viewPlaneNormal: [0, 0, 1] });
+    const cpr = {
+      ...createViewport({ id: 'cpr', viewPlaneNormal: [1, 0, 0] }),
+      type: 'cpr',
+    };
+
+    expect(filterViewportsWithParallelNormals([cpr], ref)).toEqual([cpr]);
+  });
+
   it('keeps viewports with the same normal', () => {
     const ref = createViewport({ viewPlaneNormal: [0, 0, 1] });
     const same = createViewport({ id: 'same', viewPlaneNormal: [0, 0, 1] });

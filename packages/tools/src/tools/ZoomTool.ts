@@ -65,7 +65,7 @@ class ZoomTool extends BaseTool {
 
     const camera = getLegacyCamera(viewport);
 
-    if (!hasLegacyCameraPosition(camera)) {
+    if (!hasLegacyCameraPosition(camera) || isCPRViewport(viewport)) {
       return false;
     }
 
@@ -110,7 +110,7 @@ class ZoomTool extends BaseTool {
       const camera = getLegacyCamera(viewport);
       const worldPos = currentPoints.world;
 
-      if (!hasLegacyCameraPosition(camera)) {
+      if (!hasLegacyCameraPosition(camera) || isCPRViewport(viewport)) {
         if (viewportHasZoom(viewport)) {
           this._dragViewportZoom(evt, viewport);
           viewport.render();
@@ -156,7 +156,7 @@ class ZoomTool extends BaseTool {
 
     const camera = getLegacyCamera(viewport);
 
-    if (!hasLegacyParallelCamera(camera)) {
+    if (!hasLegacyParallelCamera(camera) || isCPRViewport(viewport)) {
       if (!viewportHasZoom(viewport)) {
         return;
       }
@@ -337,7 +337,7 @@ class ZoomTool extends BaseTool {
     const wheelData = evt.detail.wheel;
     const direction = wheelData.direction;
 
-    if (!hasLegacyParallelCamera(camera)) {
+    if (!hasLegacyParallelCamera(camera) || isCPRViewport(viewport)) {
       if (!viewportHasZoom(viewport)) {
         return;
       }
@@ -391,7 +391,7 @@ class ZoomTool extends BaseTool {
     const viewport = enabledElement.viewport;
     const camera = getLegacyCamera(viewport);
 
-    if (!hasLegacyCameraPosition(camera)) {
+    if (!hasLegacyCameraPosition(camera) || isCPRViewport(viewport)) {
       if (!viewportHasPan(viewport)) {
         return;
       }
@@ -469,6 +469,12 @@ function getLegacyCamera(viewport: unknown): unknown {
   return typeof maybeViewport.getCamera === 'function'
     ? maybeViewport.getCamera()
     : undefined;
+}
+
+// A CPR viewport maps canvas points through its centerline, so it zooms and
+// pans through its own zoom and pan API rather than through world deltas
+function isCPRViewport(viewport: { type?: string }): boolean {
+  return viewport.type === Enums.ViewportType.CPR;
 }
 
 function hasLegacyCameraPosition(
