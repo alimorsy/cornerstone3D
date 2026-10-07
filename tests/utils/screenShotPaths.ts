@@ -77,8 +77,10 @@ const screenShotPaths = {
     centerRightBottom: '../../stackPosition.spec.ts/centerRightBottom.png',
     leftBottom: '../../stackPosition.spec.ts/leftBottom.png',
     rightBottom: '../../stackPosition.spec.ts/rightBottom.png',
-    leftTopHalfWideShort: '../../stackPosition.spec.ts/leftTopHalfWideShort.png',
-    leftTopHalfNarrowTall: '../../stackPosition.spec.ts/leftTopHalfNarrowTall.png',
+    leftTopHalfWideShort:
+      '../../stackPosition.spec.ts/leftTopHalfWideShort.png',
+    leftTopHalfNarrowTall:
+      '../../stackPosition.spec.ts/leftTopHalfNarrowTall.png',
     leftTopHalf: '../../stackPosition.spec.ts/leftTopHalf.png',
     rightTopHalf: '../../stackPosition.spec.ts/rightTopHalf.png',
     leftBottomHalf: '../../stackPosition.spec.ts/leftBottomHalf.png',
@@ -101,6 +103,16 @@ const screenShotPaths = {
   },
   volumeBasic: {
     viewport: 'viewport.png',
+  },
+  cprViewport: {
+    straightened: 'cpr-straightened.png',
+    stretched: 'cpr-stretched.png',
+    rotated: 'cpr-rotated.png',
+    slab: 'cpr-slab.png',
+  },
+  cprCenterline: {
+    centerline: 'cpr-centerline.png',
+    length: 'cpr-length.png',
   },
   volumeBasicTiled: {
     viewport: 'viewport.png',
