@@ -70,22 +70,43 @@ function updateScalars(volume: IImageVolume, imageData: vtkImageData): void {
   imageData.modified();
 }
 
+/**
+ * The image data the mapper samples: the volume geometry with its origin
+ * moved back half a voxel, because vtkImageCPRMapper maps world positions
+ * to texture coordinates as index / dimensions, half a texel short of the
+ * voxel centres (vtk.js 36.4.1). The scalars are shared when the volume
+ * holds them and copied from its voxel manager otherwise.
+ */
 function getScalarImageData(volume: IImageVolume): vtkImageData {
   const { imageData } = volume;
-
-  if (imageData.getPointData().getScalars()) {
-    return imageData;
-  }
-
   let scalarImageData = scalarImageDataCache.get(imageData);
 
   if (!scalarImageData) {
+    const spacing = imageData.getSpacing();
+    const direction = imageData.getDirection();
+    const origin = [...imageData.getOrigin()] as Point3;
+
+    for (let axis = 0; axis < 3; axis++) {
+      for (let component = 0; component < 3; component++) {
+        origin[component] -=
+          0.5 * spacing[axis] * direction[axis * 3 + component];
+      }
+    }
+
     scalarImageData = vtkImageData.newInstance();
     scalarImageData.setDimensions(imageData.getDimensions());
-    scalarImageData.setSpacing(imageData.getSpacing());
-    scalarImageData.setDirection(imageData.getDirection());
-    scalarImageData.setOrigin(imageData.getOrigin());
-    updateScalars(volume, scalarImageData);
+    scalarImageData.setSpacing(spacing);
+    scalarImageData.setDirection(direction);
+    scalarImageData.setOrigin(origin);
+
+    const scalars = imageData.getPointData().getScalars();
+
+    if (scalars) {
+      scalarImageData.getPointData().setScalars(scalars);
+    } else {
+      updateScalars(volume, scalarImageData);
+    }
+
     scalarImageDataCache.set(imageData, scalarImageData);
   }
 
@@ -212,7 +233,7 @@ class CPRViewport extends BaseVolumeViewport {
       this.mapper.setWidth(Math.hypot(x * dx, y * dy, z * dz));
     }
 
-    if (imageData !== volume.imageData) {
+    if (!volume.imageData.getPointData().getScalars()) {
       // A streaming volume fills its voxel manager after this point, so the
       // scalars are copied again while it loads (throttled, each copy is the
       // whole volume) and once more when it has finished
