@@ -168,6 +168,10 @@ export function cprToWorld(
   distance: number,
   lateral: number
 ): Point3 | undefined {
+  if (!Number.isFinite(distance) || !Number.isFinite(lateral)) {
+    return;
+  }
+
   const height = mapper.getHeight();
   const clamped = Math.min(Math.max(distance, 0), height);
   const { position, orientation } =
@@ -229,7 +233,7 @@ export function worldToCPR(
   const points = centerline.getPoints();
   const numberOfPoints = points.getNumberOfPoints();
 
-  if (numberOfPoints < 2) {
+  if (numberOfPoints < 2 || !worldPos.every(Number.isFinite)) {
     return;
   }
 
