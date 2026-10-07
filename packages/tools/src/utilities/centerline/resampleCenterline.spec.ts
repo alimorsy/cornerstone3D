@@ -66,4 +66,28 @@ describe('resampleCenterline', () => {
     expect(resampleCenterline([[1, 2, 3]], 1)).toEqual([[1, 2, 3]]);
     expect(resampleCenterline([], 1)).toEqual([]);
   });
+
+  it('recovers the length of a helix from sparse control points', () => {
+    // helix of radius 15 and pitch 30 over one turn: length 2π·sqrt(R² + c²)
+    const radius = 15;
+    const c = 30 / (2 * Math.PI);
+    const expected = 2 * Math.PI * Math.sqrt(radius * radius + c * c);
+    const controlPoints: Types.Point3[] = [];
+    for (let index = 0; index <= 24; index++) {
+      const t = (index / 24) * 2 * Math.PI;
+      controlPoints.push([radius * Math.cos(t), radius * Math.sin(t), c * t]);
+    }
+
+    const points = resampleCenterline(controlPoints, 0.5);
+    const length = segmentLengths(points).reduce((sum, l) => sum + l, 0);
+
+    expect(Math.abs(length - expected) / expected).toBeLessThan(0.005);
+    const lengths = segmentLengths(points);
+    const mean = lengths.reduce((sum, l) => sum + l, 0) / lengths.length;
+    const variation =
+      Math.sqrt(
+        lengths.reduce((sum, l) => sum + (l - mean) ** 2, 0) / lengths.length
+      ) / mean;
+    expect(variation).toBeLessThan(0.03);
+  });
 });
