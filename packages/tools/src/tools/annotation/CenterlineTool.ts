@@ -442,7 +442,7 @@ class CenterlineTool extends ContourBaseTool {
 
     if (
       vec3.distance(points[points.length - 1], currentPoints.world) >
-      this.configuration.spacing / 2
+      this.getSpacing() / 2
     ) {
       points.push([...currentPoints.world] as Types.Point3);
       this.updateCenterline(annotation);
@@ -511,13 +511,21 @@ class CenterlineTool extends ContourBaseTool {
    * Resamples the centerline through the control points and reformats the
    * CPR viewports of the tool group along it.
    */
+  /**
+   * The configured sample spacing, or the default when the configured value
+   * could not advance the resampling.
+   */
+  private getSpacing(): number {
+    const { spacing } = this.configuration;
+
+    return spacing > 0 ? spacing : 1;
+  }
+
   private updateCenterline(annotation: ContourAnnotation): void {
     const { points } = annotation.data.handles;
 
     annotation.data.contour.polyline =
-      points.length >= 2
-        ? resampleCenterline(points, this.configuration.spacing)
-        : [];
+      points.length >= 2 ? resampleCenterline(points, this.getSpacing()) : [];
     annotation.invalidated = true;
 
     this.applyToCPRViewports(

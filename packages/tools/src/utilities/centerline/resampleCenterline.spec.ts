@@ -62,6 +62,17 @@ describe('resampleCenterline', () => {
     expect(points.every((point) => point.every(Number.isFinite))).toBe(true);
   });
 
+  it('rejects a spacing that could not advance', () => {
+    const line: Types.Point3[] = [
+      [0, 0, 0],
+      [0, 0, 10],
+    ];
+
+    expect(() => resampleCenterline(line, 0)).toThrow(RangeError);
+    expect(() => resampleCenterline(line, -1)).toThrow(RangeError);
+    expect(() => resampleCenterline(line, NaN)).toThrow(RangeError);
+  });
+
   it('returns fewer than two points unchanged', () => {
     expect(resampleCenterline([[1, 2, 3]], 1)).toEqual([[1, 2, 3]]);
     expect(resampleCenterline([], 1)).toEqual([]);

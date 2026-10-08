@@ -7,13 +7,17 @@ import vtkSpline3D from '@kitware/vtk.js/Common/DataModel/Spline3D';
  * uniform spacing, giving the dense polyline a CPR viewport reformats along.
  *
  * @param controlPoints - Control points in world space
- * @param spacing - Distance between samples in world units
+ * @param spacing - Distance between samples in world units, greater than zero
  * @returns The sampled polyline, from the first to the last control point
  */
 export default function resampleCenterline(
   controlPoints: Types.Point3[],
   spacing: number
 ): Types.Point3[] {
+  if (!(spacing > 0)) {
+    throw new RangeError(`spacing must be positive, got ${spacing}`);
+  }
+
   const points = controlPoints.filter(
     (point, index) =>
       index === 0 || vec3.distance(point, controlPoints[index - 1]) > 0
