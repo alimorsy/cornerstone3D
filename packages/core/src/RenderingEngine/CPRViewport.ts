@@ -113,6 +113,14 @@ function getScalarImageData(volume: IImageVolume): vtkImageData {
   return scalarImageData;
 }
 
+/** The diagonal of the volume, so that all of it fits across the image */
+function getDefaultWidth(imageData: vtkImageData): number {
+  const [x, y, z] = imageData.getDimensions();
+  const [dx, dy, dz] = imageData.getSpacing();
+
+  return Math.hypot(x * dx, y * dy, z * dz);
+}
+
 /**
  * A viewport rendering a curved planar reformation (CPR) of a volume: the
  * volume is sampled along a centerline and shown as a flat image whose
@@ -240,9 +248,7 @@ class CPRViewport extends BaseVolumeViewport {
     this.mapper.setInputData(imageData, 0);
 
     if (this.cprWidth === undefined) {
-      const [x, y, z] = imageData.getDimensions();
-      const [dx, dy, dz] = imageData.getSpacing();
-      this.mapper.setWidth(Math.hypot(x * dx, y * dy, z * dz));
+      this.mapper.setWidth(getDefaultWidth(imageData));
     }
 
     if (!volume.imageData.getPointData().getScalars()) {
@@ -516,9 +522,7 @@ class CPRViewport extends BaseVolumeViewport {
     const volume = cache.getVolume(volumeId || this.getVolumeId());
 
     if (imageData) {
-      const [x, y, z] = imageData.getDimensions();
-      const [dx, dy, dz] = imageData.getSpacing();
-      this.mapper.setWidth(Math.hypot(x * dx, y * dy, z * dz));
+      this.mapper.setWidth(getDefaultWidth(imageData));
     }
 
     if (volume) {
