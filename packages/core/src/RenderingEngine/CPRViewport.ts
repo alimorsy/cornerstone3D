@@ -211,6 +211,10 @@ class CPRViewport extends BaseVolumeViewport {
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
+    // Setting raw volumes directly resets any display-set bookkeeping; the
+    // setDisplaySets override re-records after calling this.
+    this.clearDisplaySets();
+
     const { volumeId, actorUID, callback } = volumeInputArray[0];
     const volume = cache.getVolume(volumeId);
 
