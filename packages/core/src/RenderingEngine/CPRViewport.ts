@@ -131,6 +131,7 @@ function getScalarImageData(volume: IImageVolume): vtkImageData {
 class CPRViewport extends BaseVolumeViewport {
   private mapper: vtkImageCPRMapper;
   private actor: vtkImageSlice;
+  private volumeVisible = true;
   private centerline: CPRCenterline | undefined;
   private centerlineLength = 0;
   private cprMode: CPRMode = 'straightened';
@@ -215,7 +216,14 @@ class CPRViewport extends BaseVolumeViewport {
     // setDisplaySets override re-records after calling this.
     this.clearDisplaySets();
 
-    const { volumeId, actorUID, callback } = volumeInputArray[0];
+    const {
+      volumeId,
+      actorUID,
+      callback,
+      visibility,
+      blendMode,
+      slabThickness,
+    } = volumeInputArray[0];
     const volume = cache.getVolume(volumeId);
 
     if (!volume) {
@@ -296,7 +304,17 @@ class CPRViewport extends BaseVolumeViewport {
       referencedId: volumeId,
     };
     this.setActors([actorEntry]);
+    this.volumeVisible = visibility ?? true;
     this.updateActorVisibility();
+
+    if (blendMode !== undefined) {
+      this.setBlendMode(blendMode);
+    }
+
+    if (slabThickness !== undefined) {
+      this.setSlabThickness(slabThickness);
+    }
+
     await this.applyDefaultVOI(volume);
 
     callback?.({ volumeActor: this.actor as unknown as VolumeActor, volumeId });
@@ -728,7 +746,9 @@ class CPRViewport extends BaseVolumeViewport {
     }
 
     this.actor.setVisibility(
-      !!this.centerline && !!imageData?.getPointData().getScalars()
+      this.volumeVisible &&
+        !!this.centerline &&
+        !!imageData?.getPointData().getScalars()
     );
   }
 

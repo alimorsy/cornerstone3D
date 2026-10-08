@@ -351,6 +351,38 @@ describe('CPRViewport GPU --', () => {
     expectProvenance(vp, image, (world) => 4 * world[0], 'slab reset');
   });
 
+  it('applies the volume input options and takes a single volume', async () => {
+    const element = testUtils.createViewports(renderingEngine, {
+      viewportId,
+      viewportType: ViewportType.CPR,
+      width: CANVAS,
+      height: CANVAS,
+    });
+    const vp = renderingEngine.getViewport(viewportId);
+    const { volumeId } = createPhantom('linear');
+    await vp.setVolumes([
+      {
+        volumeId,
+        visibility: false,
+        blendMode: BlendModes.AVERAGE_INTENSITY_BLEND,
+        slabThickness: 6,
+      },
+    ]);
+    expect(vp.getDisplaySets()).toEqual([]);
+    expect(vp.getBlendMode()).toBe(BlendModes.AVERAGE_INTENSITY_BLEND);
+    expect(vp.getSlabThickness()).toBe(6);
+    vp.setCenterline({
+      points: polylineFromCurve(curve, 101),
+      orientations: orientationsFromCurve(curve, 101),
+    });
+    const image = await capture(vp, element);
+    // a hidden volume draws nothing but the background
+    expect(imageBounds(image).minU).toBe(Infinity);
+    await expectAsync(vp.addVolumes([{ volumeId }])).toBeRejectedWithError(
+      /single volume/
+    );
+  });
+
   it('inverts canvasToWorld on the surface and rejects points off it', async () => {
     const { vp, element } = await setup('linear');
     const image = await capture(vp, element);
