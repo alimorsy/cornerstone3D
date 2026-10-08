@@ -314,6 +314,15 @@ class CPRViewport extends BaseVolumeViewport {
   }
 
   /**
+   * A CPR viewport reformats a single volume, so none can be added to it.
+   */
+  public async addVolumes(): Promise<void> {
+    throw new Error(
+      'CPRViewport shows a single volume, set it with setVolumes instead'
+    );
+  }
+
+  /**
    * Sets the centerline to reformat along, or clears it when undefined.
    * Orientations are computed as rotation-minimizing frames when the
    * centerline does not provide them.
