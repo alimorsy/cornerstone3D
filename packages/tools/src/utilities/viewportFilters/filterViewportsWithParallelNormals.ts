@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { Enums } from '@cornerstonejs/core';
+import { isCPRViewport } from '@cornerstonejs/core';
 import getViewportICamera from '../getViewportICamera';
 
 /**
@@ -24,7 +24,7 @@ export function filterViewportsWithParallelNormals(
   return viewports.filter((viewport) => {
     // A CPR viewport has no single view plane; it shows whatever lies on
     // its centerline surface
-    if (viewport.type === Enums.ViewportType.CPR) {
+    if (isCPRViewport(viewport)) {
       return true;
     }
 

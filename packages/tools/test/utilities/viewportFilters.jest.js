@@ -1,5 +1,5 @@
 jest.mock('@cornerstonejs/core', () => ({
-  Enums: { ViewportType: { CPR: 'cpr' } },
+  isCPRViewport: (viewport) => viewport.type === 'cpr',
   getEnabledElement: jest.fn(),
   utilities: {
     isGenericViewport: jest.fn(() => false),

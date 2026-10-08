@@ -4,7 +4,7 @@ import type {
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../types/IViewport';
-import type ViewportType from '../../enums/ViewportType';
+import ViewportType from '../../enums/ViewportType';
 import type ResolvedViewportView from './ResolvedViewportView';
 
 /**
@@ -228,6 +228,14 @@ export function viewportHasZoom(viewport: unknown): viewport is IZoomViewport {
       typeof (viewport as IZoomViewport).getZoom === 'function' &&
       typeof (viewport as IZoomViewport).setZoom === 'function'
   );
+}
+
+/**
+ * Whether the viewport is a CPR viewport, which maps canvas points through
+ * its centerline rather than through a single view plane.
+ */
+export function isCPRViewport(viewport: unknown): boolean {
+  return (viewport as { type?: string })?.type === ViewportType.CPR;
 }
 
 export function viewportHasPan(viewport: unknown): viewport is IPanViewport {

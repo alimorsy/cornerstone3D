@@ -67,6 +67,7 @@ export {
   viewportHasFrameOfReferenceUID,
   viewportHasPan,
   viewportHasZoom,
+  isCPRViewport,
 } from './ViewportArchitectureTypes';
 export { default as ECGViewport } from './ECG';
 export {

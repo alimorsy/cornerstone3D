@@ -6,7 +6,7 @@ import {
   viewportHasPan,
   viewportHasZoom,
 } from '@cornerstonejs/core';
-import { Enums, getEnabledElement } from '@cornerstonejs/core';
+import { Enums, getEnabledElement, isCPRViewport } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { Events } from '../enums';
@@ -469,12 +469,6 @@ function getLegacyCamera(viewport: unknown): unknown {
   return typeof maybeViewport.getCamera === 'function'
     ? maybeViewport.getCamera()
     : undefined;
-}
-
-// A CPR viewport maps canvas points through its centerline, so it zooms and
-// pans through its own zoom and pan API rather than through world deltas
-function isCPRViewport(viewport: { type?: string }): boolean {
-  return viewport.type === Enums.ViewportType.CPR;
 }
 
 function hasLegacyCameraPosition(
