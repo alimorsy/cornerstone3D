@@ -112,7 +112,7 @@ class ZoomTool extends BaseTool {
 
       if (!hasLegacyCameraPosition(camera) || isCPRViewport(viewport)) {
         if (viewportHasZoom(viewport)) {
-          this._dragViewportZoom(evt, viewport);
+          this._dragViewportZoom(evt, viewport, true);
           viewport.render();
         }
 
@@ -428,19 +428,19 @@ class ZoomTool extends BaseTool {
 
   _dragViewportZoom(
     evt: EventTypes.InteractionEventType,
-    viewport: { getZoom(): number; setZoom(...args: unknown[]): void }
+    viewport: { getZoom(): number; setZoom(...args: unknown[]): void },
+    pinch = false
   ): void {
     const { element, deltaPoints, startPoints } = evt.detail;
+    // a pinch zooms by how far the fingers spread, not by where they move
+    const deltaY = pinch
+      ? (evt as EventTypes.TouchDragEventType).detail.deltaDistance.canvas
+      : deltaPoints.canvas[1];
     const canvasPoint = this.configuration.zoomToCenter
       ? undefined
       : startPoints?.canvas;
 
-    this._applyViewportZoomDelta(
-      viewport,
-      element,
-      deltaPoints.canvas[1],
-      canvasPoint
-    );
+    this._applyViewportZoomDelta(viewport, element, deltaY, canvasPoint);
   }
 
   _applyViewportZoomDelta(
