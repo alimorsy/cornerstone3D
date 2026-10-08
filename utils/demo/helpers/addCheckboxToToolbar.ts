@@ -43,7 +43,8 @@ export default function addCheckboxToToolbar(config: configCheckbox): void {
     attr: {
       type: 'checkbox',
       name: config.title,
-      checked: !!config.checked,
+      // the attribute marks the box checked whatever its value
+      ...(config.checked ? { checked: true } : {}),
     },
     event: {
       change: fnChange,
