@@ -203,6 +203,10 @@
         "name": "CPR Centerline Tool",
         "description": "Demonstrates how to draw a centerline through a volume with the Centerline tool and reformat it in a CPR viewport, with measurements on the reformation"
       },
+      "cprVesselPhantom": {
+        "name": "CPR Vessel Phantom",
+        "description": "Reformats a synthetic vessel with a known stenosis, built in memory without any network access, in straightened and stretched CPR viewports, so that measurements on the reformation can be checked against the ground truth"
+      },
       "cursor3D": {
         "name": "3D Volume Picking",
         "description": "Demonstrates how to use the VTK.js vtkCellPicker object to pick 3D point in volume rendering scene. Also shows how to synchronize between 3D and 2D viewports."

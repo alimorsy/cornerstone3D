@@ -29,6 +29,7 @@ export {
   getNaturalizedInstanceForDisplaySetSplit,
 } from './splitDisplaySetsFromImageIds';
 import createInfoSection from './createInfoSection';
+import createVesselPhantomVolume from './createVesselPhantomVolume';
 import downloadSurfacesData from './downloadSurfacesData';
 import getLocalUrl from './getLocalUrl';
 import initDemo from './initDemo';
@@ -73,6 +74,7 @@ export {
   createElement,
   createImageIdsAndCacheMetaData,
   createInfoSection,
+  createVesselPhantomVolume,
   ctVoiRange,
   downloadSurfacesData,
   getLocalUrl,
