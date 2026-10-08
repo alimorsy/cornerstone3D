@@ -114,6 +114,12 @@ const screenShotPaths = {
     centerline: 'cpr-centerline.png',
     length: 'cpr-length.png',
   },
+  cprVesselPhantom: {
+    reformations: 'cpr-vessel-reformations.png',
+    rotated: 'cpr-vessel-rotated.png',
+    slab: 'cpr-vessel-slab.png',
+    truth: 'cpr-vessel-truth.png',
+  },
   volumeBasicTiled: {
     viewport: 'viewport.png',
   },
