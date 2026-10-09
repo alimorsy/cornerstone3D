@@ -1,4 +1,5 @@
-import { quat, vec3 } from 'gl-matrix';
+import { mat3, quat, vec3 } from 'gl-matrix';
+import type { mat4 } from 'gl-matrix';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import type { vtkImageCPRMapper } from '@kitware/vtk.js/Rendering/Core/ImageCPRMapper';
@@ -106,7 +107,11 @@ export function computeCenterlineOrientations(
 /**
  * Builds the centerline polydata consumed by vtkImageCPRMapper: a single
  * polyline through the points, with the orientation of each point stored as
- * its tensor data.
+ * a quaternion in its tensor data.
+ *
+ * The mapper interpolates the quaternions of neighbouring points, and its
+ * shader takes the shorter arc only when they lie in the same hemisphere, so
+ * the sign is kept continuous along the line.
  */
 export function createCenterlinePolyData(
   points: Point3[],
@@ -114,10 +119,26 @@ export function createCenterlinePolyData(
 ): vtkPolyData {
   const polyData = vtkPolyData.newInstance();
   const lines = new Uint32Array(points.length + 1);
+  const quaternions = new Float64Array(points.length * 4);
+  const frame = mat3.create();
+  // number tuples keep double precision, quat.create() is single
+  const rotation: quat = [0, 0, 0, 1];
+  const previous: quat = [0, 0, 0, 1];
 
   lines[0] = points.length;
   points.forEach((_, index) => {
     lines[index + 1] = index;
+
+    mat3.fromMat4(
+      frame,
+      orientations.subarray(index * 16, index * 16 + 16) as unknown as mat4
+    );
+    quat.normalize(rotation, quat.fromMat3(rotation, frame));
+    if (index > 0 && quat.dot(rotation, previous) < 0) {
+      quat.scale(rotation, rotation, -1);
+    }
+    quaternions.set(rotation, index * 4);
+    quat.copy(previous, rotation);
   });
 
   polyData.getPoints().setData(Float32Array.from(points.flat()), 3);
@@ -125,8 +146,8 @@ export function createCenterlinePolyData(
   polyData.getPointData().setTensors(
     vtkDataArray.newInstance({
       name: 'Orientation',
-      numberOfComponents: 16,
-      values: orientations,
+      numberOfComponents: 4,
+      values: quaternions,
     })
   );
 

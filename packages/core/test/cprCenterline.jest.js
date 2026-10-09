@@ -24,6 +24,34 @@ function quarterCircle(radius, count) {
   return points;
 }
 
+function helix(radius, pitch, turns, count) {
+  const points = [];
+  for (let index = 0; index <= count; index++) {
+    const angle = (index / count) * turns * 2 * Math.PI;
+    points.push([
+      radius * Math.cos(angle),
+      radius * Math.sin(angle),
+      (pitch * angle) / (2 * Math.PI),
+    ]);
+  }
+  return points;
+}
+
+/** Frames turning once about the tangent of a straight line. */
+function twistedFrames(points) {
+  const orientations = new Float32Array(points.length * 16);
+  points.forEach((_, index) => {
+    const angle = (index / (points.length - 1)) * 2 * Math.PI;
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    orientations.set(
+      [c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+      index * 16
+    );
+  });
+  return orientations;
+}
+
 function createMapper(points, orientations) {
   const mapper = vtkImageCPRMapper.newInstance();
   mapper.setWidth(100);
@@ -103,6 +131,46 @@ describe('cprCenterline', () => {
 
       expect(Array.from(orientations).every(Number.isFinite)).toBe(true);
       expect(Array.from(frameAt(orientations, 0).z)).toEqual([0, 0, 1]);
+    });
+  });
+
+  describe('createCenterlinePolyData', () => {
+    // the mapper interpolates orientations as quaternions, and its shader
+    // takes the shorter arc only when neighbours lie in the same hemisphere
+    function expectContinuousQuaternions(points, orientations) {
+      const mapper = createMapper(points, orientations);
+      const quaternions = mapper.getOrientedCenterline().getOrientations();
+      let minDot = 1;
+
+      expect(quaternions.length).toBe(points.length);
+
+      quaternions.forEach((rotation, index) => {
+        const { x, y } = frameAt(orientations, index);
+        const rotatedX = vec3.transformQuat(vec3.create(), [1, 0, 0], rotation);
+        const rotatedY = vec3.transformQuat(vec3.create(), [0, 1, 0], rotation);
+
+        expect(vec3.distance(rotatedX, x)).toBeLessThan(1e-5);
+        expect(vec3.distance(rotatedY, y)).toBeLessThan(1e-5);
+
+        if (index > 0) {
+          minDot = Math.min(minDot, quat.dot(rotation, quaternions[index - 1]));
+        }
+      });
+
+      expect(minDot).toBeGreaterThanOrEqual(0);
+    }
+
+    it('keeps the quaternions of transported frames in one hemisphere', () => {
+      const points = helix(16, 20, 2, 1200);
+      expectContinuousQuaternions(
+        points,
+        computeCenterlineOrientations(points)
+      );
+    });
+
+    it('keeps the quaternions of supplied frames in one hemisphere', () => {
+      const points = straightLine(100, 0.5);
+      expectContinuousQuaternions(points, twistedFrames(points));
     });
   });
 
