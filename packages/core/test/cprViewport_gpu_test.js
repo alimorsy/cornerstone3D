@@ -39,10 +39,19 @@ const fields = {
   gradientX: (x, y, z) => 4 * x,
   // edge midway between the voxel centres at x = 31 and x = 32
   step: (x) => (x < 31.5 ? 40 : 200),
+  // below 0 everywhere, as lung and fat are in HU
+  negativeX: (x) => 4 * x - 300,
+  // above 1 everywhere
+  positiveX: (x) => 4 * x + 10,
 };
+
+// signed and float phantoms are stored as the texture holds them
+const arrayTypes = { negativeX: Int16Array, positiveX: Float32Array };
 
 function createPhantom(name) {
   const volume = fieldVolume(DIMENSIONS, [1, 1, 1], [0, 0, 0], fields[name]);
+  const ArrayType = arrayTypes[name] || Uint8Array;
+  const bits = 8 * ArrayType.BYTES_PER_ELEMENT;
   // derived image ids keep the default VOI from fetching the images
   const volumeId = `derived:cprPhantom:${name}:${utilities.uuidv4()}`;
   volumeLoader.createLocalVolume(volumeId, {
@@ -50,14 +59,14 @@ function createPhantom(name) {
     spacing: [1, 1, 1],
     origin: [0, 0, 0],
     direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    scalarData: Uint8Array.from(volume.data),
+    scalarData: ArrayType.from(volume.data),
     metadata: {
       FrameOfReferenceUID: 'CPR_PHANTOM_FOR',
       PhotometricInterpretation: 'MONOCHROME2',
-      BitsAllocated: 8,
-      BitsStored: 8,
-      HighBit: 7,
-      PixelRepresentation: 0,
+      BitsAllocated: bits,
+      BitsStored: bits,
+      HighBit: bits - 1,
+      PixelRepresentation: ArrayType === Uint8Array ? 0 : 1,
       Modality: 'CT',
     },
   });
@@ -225,7 +234,7 @@ describe('CPRViewport GPU --', () => {
     });
   });
 
-  async function setup(phantom) {
+  async function setup(phantom, voiRange = { lower: 0, upper: 255 }) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
       viewportType: ViewportType.CPR,
@@ -240,7 +249,7 @@ describe('CPRViewport GPU --', () => {
       points: polylineFromCurve(curve, 101),
       orientations: orientationsFromCurve(curve, 101),
     });
-    vp.setProperties({ voiRange: { lower: 0, upper: 255 } });
+    vp.setProperties({ voiRange });
     vp.resetCamera();
     const sample = (world) => trilinear(volume, world);
     return { vp, element, volume, sample };
@@ -349,6 +358,46 @@ describe('CPRViewport GPU --', () => {
     }
     const image = await capture(vp, element, () => vp.resetSlabThickness());
     expectProvenance(vp, image, (world) => 4 * world[0], 'slab reset');
+  });
+
+  // vtk.js starts maximum and minimum projections from 0 and 1, the bounds
+  // of a normalized texture; signed and float textures hold raw values
+  async function expectProjectionFromData(phantom, blendMode, sign, voiRange) {
+    const { vp, element } = await setup(phantom, voiRange);
+    const normalSlope = (world) => (4 * (world[0] - RADIUS)) / RADIUS;
+    const halfSlab = 4;
+    const image = await capture(vp, element, () => {
+      vp.setBlendMode(blendMode);
+      vp.setSlabThickness(2 * halfSlab);
+    });
+    // a VOI 255 wide maps a value to the gray level value - lower
+    expectProvenance(
+      vp,
+      image,
+      (world) =>
+        fields[phantom](world[0]) +
+        sign * halfSlab * normalSlope(world) -
+        voiRange.lower,
+      `${phantom}, blend mode ${blendMode}`
+    );
+  }
+
+  it('projects the maximum of data below zero', async () => {
+    await expectProjectionFromData(
+      'negativeX',
+      BlendModes.MAXIMUM_INTENSITY_BLEND,
+      1,
+      { lower: -300, upper: -45 }
+    );
+  });
+
+  it('projects the minimum of data above one', async () => {
+    await expectProjectionFromData(
+      'positiveX',
+      BlendModes.MINIMUM_INTENSITY_BLEND,
+      -1,
+      { lower: 10, upper: 265 }
+    );
   });
 
   it('applies the volume input options and takes a single volume', async () => {
