@@ -220,12 +220,11 @@ export class BaseStreamingImageVolume
       return;
     }
 
-    // if it is not a cached image or volume
-    this.updateTextureAndTriggerEvents(
-      imageIdIndex,
-      imageId,
-      imageQualityStatus
-    );
+    // if it is not a cached image or volume; every slice showing the image
+    // completes, as one fills the slices without an image of their own
+    for (const index of this.getImageIdIndices(imageId)) {
+      this.updateTextureAndTriggerEvents(index, imageId, imageQualityStatus);
+    }
 
     // Check if this completes a timepoint (for dynamic volumes)
     if (this.isDynamicVolume()) {

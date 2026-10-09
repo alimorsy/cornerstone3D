@@ -28,6 +28,7 @@ export interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
 export class ImageVolume {
   private _imageIds: string[];
   private _imageIdsIndexMap = new Map();
+  private _imageIdsIndicesMap = new Map<string, number[]>();
   private _imageURIsIndexMap = new Map();
   /** volume scalar data 3D or 4D */
   protected totalNumFrames: number;
@@ -222,12 +223,19 @@ export class ImageVolume {
 
   private _reprocessImageIds() {
     this._imageIdsIndexMap.clear();
+    this._imageIdsIndicesMap.clear();
     this._imageURIsIndexMap.clear();
 
     this._imageIds.forEach((imageId, i) => {
       const imageURI = imageIdToURI(imageId);
 
-      this._imageIdsIndexMap.set(imageId, i);
+      // an image fills every slice without one of its own, so it can be
+      // on several; the first is its index
+      if (!this._imageIdsIndexMap.has(imageId)) {
+        this._imageIdsIndexMap.set(imageId, i);
+        this._imageIdsIndicesMap.set(imageId, []);
+      }
+      this._imageIdsIndicesMap.get(imageId).push(i);
       this._imageURIsIndexMap.set(imageURI, i);
     });
   }
@@ -250,6 +258,15 @@ export class ImageVolume {
    */
   public getImageIdIndex(imageId: string): number {
     return this._imageIdsIndexMap.get(imageId);
+  }
+
+  /**
+   * return the indices of every slice showing a given imageId
+   * @param imageId - imageId
+   * @returns imageId indices, empty when the image is not in the volume
+   */
+  public getImageIdIndices(imageId: string): number[] {
+    return this._imageIdsIndicesMap.get(imageId) || [];
   }
 
   public getImageIdByIndex(imageIdIndex: number): string {
