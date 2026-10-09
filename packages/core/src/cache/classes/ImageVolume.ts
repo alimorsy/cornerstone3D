@@ -154,6 +154,7 @@ export class ImageVolume {
         imageIds,
         numberOfComponents,
         id: volumeId,
+        dataType,
       });
 
     this.numVoxels =

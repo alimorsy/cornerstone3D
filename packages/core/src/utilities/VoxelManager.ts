@@ -2,6 +2,7 @@ import cache from '../cache/cache';
 import { InterpolationType } from '../enums';
 import { mat3, vec3 } from 'gl-matrix';
 import type {
+  PixelDataTypedArrayString,
   BoundsIJK,
   Mat3,
   Point3,
@@ -18,6 +19,7 @@ import isEqual from './isEqual';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { iterateOverPointsInShapeVoxelManager } from './pointInShapeCallback';
 import { coreLog } from './logger';
+import { getConstructorFromType } from './getBufferConfiguration';
 
 const log = coreLog.getLogger('utilities', 'VoxelManager');
 
@@ -1076,11 +1078,13 @@ export default class VoxelManager<T> {
     imageIds,
     numberOfComponents = 1,
     id,
+    dataType,
   }: {
     dimensions: Point3;
     imageIds: string[];
     numberOfComponents: number;
     id?: string;
+    dataType?: PixelDataTypedArrayString;
   }): IVoxelManager<number> | IVoxelManager<RGB> {
     const pixelsPerSlice = dimensions[0] * dimensions[1];
     const depth = dimensions[2];
@@ -1184,7 +1188,12 @@ export default class VoxelManager<T> {
       return true;
     }
 
+    // the volume's own type: an image cached before the volume may hold a
+    // narrower one, whichever its values happened to fit
     const _getConstructor = () => {
+      if (dataType) {
+        return getConstructorFromType(dataType, false);
+      }
       const imageVoxelManager = resolveSliceVoxelManager(0);
       if (!imageVoxelManager) {
         return null;
