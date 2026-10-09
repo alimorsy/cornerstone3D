@@ -17,7 +17,7 @@ import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkOpenGLVolume from '@kitware/vtk.js/Rendering/OpenGL/Volume';
 import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper';
 import vtkViewNodeFactory from '@kitware/vtk.js/Rendering/SceneGraph/ViewNodeFactory';
-import vtkSlabOpenGLImageCPRMapper from './vtkSlabOpenGLImageCPRMapper';
+import vtkPatchedOpenGLImageCPRMapper from './vtkPatchedOpenGLImageCPRMapper';
 import vtkStreamingOpenGLImageResliceMapper from './vtkStreamingOpenGLImageResliceMapper';
 import vtkStreamingOpenGLVolumeMapper from './vtkStreamingOpenGLVolumeMapper';
 
@@ -126,7 +126,7 @@ export function extend(publicAPI, model, initialValues = {}) {
   registerOverride('vtkImageMapper', vtkOpenGLImageMapper.newInstance);
   registerOverride(
     'vtkImageCPRMapper',
-    vtkSlabOpenGLImageCPRMapper.newInstance
+    vtkPatchedOpenGLImageCPRMapper.newInstance
   );
   registerOverride(
     'vtkImageResliceMapper',

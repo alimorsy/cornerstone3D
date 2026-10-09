@@ -5,18 +5,19 @@ import { ProjectionMode } from '@kitware/vtk.js/Rendering/Core/ImageCPRMapper/Co
 const { vtkWarningMacro } = macro;
 
 /**
- * vtkSlabOpenGLImageCPRMapper - vtkOpenGLImageCPRMapper whose maximum and
- * minimum projections start from the first slab sample.
+ * vtkPatchedOpenGLImageCPRMapper - vtkOpenGLImageCPRMapper with corrections
+ * to the generated shaders.
  *
- * vtk.js starts them from 0 and 1, the bounds of a normalized texture. Signed
+ * Maximum and minimum projections start from the first slab sample: vtk.js
+ * starts them from 0 and 1, the bounds of a normalized texture, while signed
  * and float textures hold raw values, so a maximum projection never fell
  * below 0 and a minimum projection never rose above 1.
  *
  * @param {*} publicAPI The public API to extend
  * @param {*} model The private model to extend.
  */
-function vtkSlabOpenGLImageCPRMapper(publicAPI, model) {
-  model.classHierarchy.push('vtkSlabOpenGLImageCPRMapper');
+function vtkPatchedOpenGLImageCPRMapper(publicAPI, model) {
+  model.classHierarchy.push('vtkPatchedOpenGLImageCPRMapper');
 
   const superClass = { ...publicAPI };
 
@@ -59,14 +60,14 @@ export function extend(publicAPI, model, initialValues = {}) {
   vtkOpenGLImageCPRMapper.extend(publicAPI, model, initialValues);
 
   // Object methods
-  vtkSlabOpenGLImageCPRMapper(publicAPI, model);
+  vtkPatchedOpenGLImageCPRMapper(publicAPI, model);
 }
 
 // ----------------------------------------------------------------------------
 
 export const newInstance = macro.newInstance(
   extend,
-  'vtkSlabOpenGLImageCPRMapper'
+  'vtkPatchedOpenGLImageCPRMapper'
 );
 
 // ----------------------------------------------------------------------------
