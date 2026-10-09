@@ -24,6 +24,23 @@ function vtkPatchedOpenGLImageCPRMapper(publicAPI, model) {
   publicAPI.replaceShaderValues = (shaders, ren, actor) => {
     superClass.replaceShaderValues(shaders, ren, actor);
 
+    // Interpolate the position and the offset within the quad at the covered
+    // samples: with multisampling, a segment quad thinner than a pixel would
+    // otherwise have them extrapolated to the pixel centre, beyond the segment
+    for (const varying of [
+      'vec2 quadOffsetVSOutput',
+      'vec3 centerlinePosVSOutput',
+    ]) {
+      shaders.Vertex = shaders.Vertex.replace(
+        `centroid out ${varying};`,
+        `centroid out ${varying};`
+      );
+      shaders.Fragment = shaders.Fragment.replace(
+        `centroid in ${varying};`,
+        `centroid in ${varying};`
+      );
+    }
+
     if (
       !model.renderable.isProjectionEnabled() ||
       model.renderable.getProjectionMode() === ProjectionMode.AVERAGE

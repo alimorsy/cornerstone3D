@@ -43,7 +43,55 @@ const fields = {
   negativeX: (x) => 4 * x - 300,
   // above 1 everywhere
   positiveX: (x) => 4 * x + 10,
+  // bright wedges within 13 mm of the corner of the V centerline, more than
+  // 10 degrees outside the fan its surface sweeps there (see veeCurve)
+  wedges: (x, y) => {
+    const dx = x - VEE_CORNER[0];
+    const dy = y - VEE_CORNER[1];
+    return dy > 0 && Math.abs(dx) > 1.43 * dy && Math.hypot(dx, dy) < 13
+      ? 200
+      : 40;
+  },
 };
+
+// V centerline: in at 45 degrees, out at -45 degrees, a 90 degree corner.
+// Its sampling axis is in-plane and on the outer side of the corner the
+// surface sweeps the fan between 45 and 135 degrees around it.
+const VEE_CORNER = [32, 40, 32];
+
+function veePoints(legLength, step) {
+  const points = [];
+  const leg = Math.SQRT1_2;
+  for (let s = -legLength; s <= legLength + 1e-9; s += step) {
+    const along = Math.abs(s) * leg;
+    points.push([
+      VEE_CORNER[0] + Math.sign(s) * along,
+      VEE_CORNER[1] - along,
+      VEE_CORNER[2],
+    ]);
+  }
+  return points;
+}
+
+/** Range of the trilinear field within half a voxel of a world point. */
+function stencilRange(volume, world) {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const dx of [-0.5, 0, 0.5]) {
+    for (const dy of [-0.5, 0, 0.5]) {
+      for (const dz of [-0.5, 0, 0.5]) {
+        const value = trilinear(volume, [
+          world[0] + dx,
+          world[1] + dy,
+          world[2] + dz,
+        ]);
+        min = Math.min(min, value);
+        max = Math.max(max, value);
+      }
+    }
+  }
+  return [min, max];
+}
 
 // signed and float phantoms are stored as the texture holds them
 const arrayTypes = { negativeX: Int16Array, positiveX: Float32Array };
@@ -398,6 +446,48 @@ describe('CPRViewport GPU --', () => {
       -1,
       { lower: 10, upper: 265 }
     );
+  });
+
+  it('samples quads thinner than a pixel within their segment', async () => {
+    // with multisampling, the varyings of a quad that does not cover the
+    // pixel centre are extrapolated to it unless interpolated at the
+    // covered samples; at a sharp corner that samples beyond the surface
+    const element = testUtils.createViewports(renderingEngine, {
+      viewportId,
+      viewportType: ViewportType.CPR,
+      width: CANVAS,
+      height: CANVAS,
+    });
+    const vp = renderingEngine.getViewport(viewportId);
+    const { volumeId, volume } = createPhantom('wedges');
+    await vp.setVolumes([{ volumeId }]);
+    vp.setCPRWidth(WIDTH);
+    vp.setCenterline({ points: veePoints(25, 0.1) });
+    vp.setProperties({ voiRange: { lower: 0, upper: 255 } });
+    vp.resetCamera();
+    // 0.1 mm segments at about 0.25 mm per pixel
+    const image = await capture(vp, element, () => vp.setZoom(0.5));
+    const cornerRow = Math.round(vp.worldToCanvas(VEE_CORNER)[1]);
+    let tested = 0;
+    let maxExcess = 0;
+    for (let v = cornerRow - 3; v <= cornerRow + 3; v++) {
+      for (let u = 0; u < image.width; u++) {
+        if (!insideImage(image, u, v)) {
+          continue;
+        }
+        const [low, high] = stencilRange(
+          volume,
+          vp.canvasToWorld([u + 0.5, v + 0.5])
+        );
+        const value = gray(image, u, v);
+        maxExcess = Math.max(maxExcess, low - value, value - high);
+        tested++;
+      }
+    }
+    expect(tested).toBeGreaterThan(200);
+    expect(maxExcess)
+      .withContext(`max excess over ${tested} pixels around the corner`)
+      .toBeLessThanOrEqual(TAU_GRAY);
   });
 
   it('applies the volume input options and takes a single volume', async () => {
