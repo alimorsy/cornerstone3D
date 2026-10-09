@@ -54,7 +54,8 @@ function generateVolumePropsFromImageIds(
     scanAxisNormal
   );
 
-  const numFrames = imageIds.length;
+  // the slices of the regular grid the images were placed on
+  const numFrames = sortedImageIds.length;
 
   // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
   const spacing = [PixelSpacing[1], PixelSpacing[0], zSpacing] as Point3;
