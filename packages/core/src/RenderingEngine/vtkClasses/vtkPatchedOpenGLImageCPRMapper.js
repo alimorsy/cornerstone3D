@@ -13,10 +13,11 @@ const { vtkWarningMacro } = macro;
  * and float textures hold raw values, so a maximum projection never fell
  * below 0 and a minimum projection never rose above 1.
  *
- * The position and the offset within a segment quad are interpolated at the
- * covered samples: with multisampling, a quad thinner than a pixel otherwise
- * has them extrapolated to the pixel centre, beyond its segment, which at a
- * sharp corner samples off the surface.
+ * The orientation is interpolated within the segment only: with
+ * multisampling, a quad that does not cover the pixel centre has its offset
+ * extrapolated there, and the orientation of a quad thinner than a pixel was
+ * rotated beyond its end frames, which at a sharp corner sampled off the
+ * surface.
  *
  * @param {*} publicAPI The public API to extend
  * @param {*} model The private model to extend.
@@ -29,22 +30,22 @@ function vtkPatchedOpenGLImageCPRMapper(publicAPI, model) {
   publicAPI.replaceShaderValues = (shaders, ren, actor) => {
     superClass.replaceShaderValues(shaders, ren, actor);
 
-    // Interpolate the position and the offset within the quad at the covered
-    // samples: with multisampling, a segment quad thinner than a pixel would
-    // otherwise have them extrapolated to the pixel centre, beyond the segment
-    for (const varying of [
-      'vec2 quadOffsetVSOutput',
-      'vec3 centerlinePosVSOutput',
-    ]) {
-      shaders.Vertex = shaders.Vertex.replace(
-        `out ${varying};`,
-        `centroid out ${varying};`
+    // Keep the orientation within the segment: with multisampling, a quad
+    // that does not cover the pixel centre has its offset extrapolated there,
+    // and the orientation of a quad thinner than a pixel would be rotated
+    // beyond its end frames
+    shaders.Fragment = shaders.Fragment.replace(
+      'mix(q0, q1, quadOffsetVSOutput.y)',
+      'mix(q0, q1, clamp(quadOffsetVSOutput.y, 0.0, 1.0))'
+    )
+      .replace(
+        'float omega = acos(qCosAngle);',
+        'float omega = acos(qCosAngle);\n  float qT = clamp(quadOffsetVSOutput.y, 0.0, 1.0);'
+      )
+      .replace(
+        'sin((1.0 - quadOffsetVSOutput.y) * omega) * q0 + sin(quadOffsetVSOutput.y * omega) * q1',
+        'sin((1.0 - qT) * omega) * q0 + sin(qT * omega) * q1'
       );
-      shaders.Fragment = shaders.Fragment.replace(
-        `in ${varying};`,
-        `centroid in ${varying};`
-      );
-    }
 
     if (
       !model.renderable.isProjectionEnabled() ||
