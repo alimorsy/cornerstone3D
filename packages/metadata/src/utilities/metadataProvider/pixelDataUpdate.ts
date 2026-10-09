@@ -72,17 +72,19 @@ function normalizePaletteLUTToFinal(
   const tableLen = descriptor[0];
   const bits = descriptor[2] ?? 16;
   const { view, byteLength } = normalizePaletteLUT(raw);
+  // an odd number of 8-bit entries is padded to an even length
+  const padded = tableLen % 2 === 1 && byteLength === tableLen + 1;
   const expectedByteLengths = [tableLen, tableLen * 2];
-  if (!expectedByteLengths.includes(byteLength)) {
+  if (!expectedByteLengths.includes(byteLength) && !padded) {
     const actualEntries =
       byteLength === tableLen ? view.length : Math.floor(byteLength / 2);
     throw new Error(
       `Palette color lookup table length mismatch (${color}): descriptor has ${tableLen} entries (expected byteLength ${tableLen} or ${tableLen * 2}), but got ${byteLength} bytes (${actualEntries} effective entries). This may indicate duplicated or concatenated buffer data from the natural filter.`
     );
   }
-  const use8 = tableLen === byteLength;
+  const use8 = tableLen === byteLength || padded;
   if (use8) {
-    return view instanceof Uint8Array ? view : new Uint8Array(view);
+    return new Uint8Array(view.buffer, view.byteOffset, tableLen);
   }
   return view instanceof Uint16Array
     ? view
