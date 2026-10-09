@@ -600,12 +600,8 @@ class CPRViewport extends BaseVolumeViewport {
    * are not on the sampled surface map off canvas.
    */
   public isReferenceViewable(viewRef: ViewReference): boolean {
-    const FrameOfReferenceUID = this.getFrameOfReferenceUID();
-
-    if (
-      !FrameOfReferenceUID ||
-      viewRef.FrameOfReferenceUID !== FrameOfReferenceUID
-    ) {
+    // the same frame of reference, which neither side may have
+    if (viewRef.FrameOfReferenceUID !== this.getFrameOfReferenceUID()) {
       return false;
     }
 

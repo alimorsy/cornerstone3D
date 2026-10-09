@@ -96,7 +96,7 @@ function stencilRange(volume, world) {
 // signed and float phantoms are stored as the texture holds them
 const arrayTypes = { negativeX: Int16Array, positiveX: Float32Array };
 
-function createPhantom(name) {
+function createPhantom(name, { withFrameOfReference = true } = {}) {
   const volume = fieldVolume(DIMENSIONS, [1, 1, 1], [0, 0, 0], fields[name]);
   const ArrayType = arrayTypes[name] || Uint8Array;
   const bits = 8 * ArrayType.BYTES_PER_ELEMENT;
@@ -109,7 +109,7 @@ function createPhantom(name) {
     direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
     scalarData: ArrayType.from(volume.data),
     metadata: {
-      FrameOfReferenceUID: 'CPR_PHANTOM_FOR',
+      FrameOfReferenceUID: withFrameOfReference ? 'CPR_PHANTOM_FOR' : undefined,
       PhotometricInterpretation: 'MONOCHROME2',
       BitsAllocated: bits,
       BitsStored: bits,
@@ -488,6 +488,31 @@ describe('CPRViewport GPU --', () => {
     expect(maxExcess)
       .withContext(`max excess over ${tested} pixels around the corner`)
       .toBeLessThanOrEqual(TAU_GRAY);
+  });
+
+  it('shows references of a volume without a frame of reference', async () => {
+    testUtils.createViewports(renderingEngine, {
+      viewportId,
+      viewportType: ViewportType.CPR,
+      width: CANVAS,
+      height: CANVAS,
+    });
+    const vp = renderingEngine.getViewport(viewportId);
+    const { volumeId } = createPhantom('linear', {
+      withFrameOfReference: false,
+    });
+    await vp.setVolumes([{ volumeId }]);
+    vp.setCenterline({ points: polylineFromCurve(curve, 101) });
+    expect(vp.getFrameOfReferenceUID()).toBeUndefined();
+    const reference = vp.getViewReference();
+    expect(reference.FrameOfReferenceUID).toBeUndefined();
+    expect(vp.isReferenceViewable(reference)).toBe(true);
+    expect(
+      vp.isReferenceViewable({ ...reference, FrameOfReferenceUID: 'OTHER' })
+    ).toBe(false);
+    expect(vp.isReferenceViewable({ ...reference, volumeId: 'other' })).toBe(
+      false
+    );
   });
 
   it('applies the volume input options and takes a single volume', async () => {
