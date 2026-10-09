@@ -13,6 +13,11 @@ const { vtkWarningMacro } = macro;
  * and float textures hold raw values, so a maximum projection never fell
  * below 0 and a minimum projection never rose above 1.
  *
+ * The position and the offset within a segment quad are interpolated at the
+ * covered samples: with multisampling, a quad thinner than a pixel otherwise
+ * has them extrapolated to the pixel centre, beyond its segment, which at a
+ * sharp corner samples off the surface.
+ *
  * @param {*} publicAPI The public API to extend
  * @param {*} model The private model to extend.
  */
@@ -32,11 +37,11 @@ function vtkPatchedOpenGLImageCPRMapper(publicAPI, model) {
       'vec3 centerlinePosVSOutput',
     ]) {
       shaders.Vertex = shaders.Vertex.replace(
-        `centroid out ${varying};`,
+        `out ${varying};`,
         `centroid out ${varying};`
       );
       shaders.Fragment = shaders.Fragment.replace(
-        `centroid in ${varying};`,
+        `in ${varying};`,
         `centroid in ${varying};`
       );
     }
